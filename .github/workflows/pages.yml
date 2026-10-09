@@ -1,0 +1,34 @@
+name: Publish portfolio
+on:
+  push:
+    branches: [main]
+    paths: ['portfolio.zip.part*', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and unpack final website
+        run: |
+          cat portfolio.zip.part??? > /tmp/portfolio.zip
+          echo 'b4a28e7f01fed959eb4fb49f407cd88ad871dbacaadf12918bc29320885365e1  /tmp/portfolio.zip' | sha256sum --check
+          unzip -q /tmp/portfolio.zip -d _site
+          test -f _site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
