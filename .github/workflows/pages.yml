@@ -2,7 +2,7 @@ name: Publish portfolio
 on:
   push:
     branches: [main]
-    paths: ['portfolio.zip.part*', '.github/workflows/pages.yml']
+    paths: ['payload/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,7 +10,7 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -18,15 +18,15 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Verify and unpack final website
         run: |
-          cat portfolio.zip.part??? > /tmp/portfolio.zip
+          python3 -c 'import base64,pathlib; parts=sorted(pathlib.Path("payload").glob("part*.b64")); assert len(parts)==22, "Incomplete upload"; pathlib.Path("/tmp/portfolio.zip").write_bytes(b"".join(base64.b64decode(p.read_bytes(),validate=True) for p in parts))'
           echo 'b4a28e7f01fed959eb4fb49f407cd88ad871dbacaadf12918bc29320885365e1  /tmp/portfolio.zip' | sha256sum --check
           unzip -q /tmp/portfolio.zip -d _site
           test -f _site/index.html
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
       - name: Deploy
